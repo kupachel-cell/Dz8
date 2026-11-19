@@ -1,90 +1,89 @@
-﻿using Dz7lat.Classes;
-using Dz7lat.enums;
-class Program
+﻿using System;
+using System.Collections.Generic;
+
+namespace dz8lat
 {
-    static int ReadChoice(string prompt, int min, int max)
+    internal class Program
     {
-        while (true)
+        static void Main(string[] args)
         {
-            Console.Write(prompt);
-            string input = Console.ReadLine();
-            if (int.TryParse(input, out int result) && result >= min && result <= max)
-            {
-                return result;
-            }
-            Console.WriteLine($"Ошибка ввода. Введите число от {min} до {max}.");
+            Ex1Test();
         }
-    }
-    static void Main(string[] args)
-    {
-        Employee timur = new Employee("Тимур", "Генеральный директор", Department.General);
-        Employee rashid = new Employee("Рашид", "Финансовый директор", Department.General, timur);
-        Employee ilham = new Employee("О Ильхам", "Директор по автоматизации", Department.General, timur);
-        Employee lukas = new Employee("Лукас", "Главный бухгалтер", Department.Accounting, rashid);
 
-        Employee orkadiy = new Employee("Оркадий", "Начальник инф. систем", Department.ITManagement, ilham);
-        Employee volodya = new Employee("Володя", "Зам. начальника инф. систем", Department.ITManagement, ilham);
-
-        Employee ilshat = new Employee("Ильшат", "Главный системщик", Department.SystemAdmins, orkadiy, volodya);
-        Employee ivanych = new Employee("Иваныч", "Зам. главного системщика", Department.SystemAdmins, ilshat);
-        Employee ilya = new Employee("Илья", "Системщик", Department.SystemAdmins, ivanych);
-        Employee vitya = new Employee("Витя", "Системщик", Department.SystemAdmins, ivanych);
-        Employee zhenya = new Employee("Женя", "Системщик", Department.SystemAdmins, ivanych);
-
-        Employee sergey = new Employee("Сергей", "Главный разработчик", Department.Developers, orkadiy, volodya);
-        Employee lyaysan = new Employee("Ляйсан", "Зам. главного разработчика", Department.Developers, sergey);
-        Employee marat = new Employee("Марат", "Разработчик", Department.Developers, lyaysan);
-        Employee dina = new Employee("Дина", "Разработчик", Department.Developers, lyaysan);
-        Employee ildar = new Employee("Ильдар", "Разработчик", Department.Developers, lyaysan);
-        Employee anton = new Employee("Антон", "Разработчик", Department.Developers, lyaysan);
-
-        List<Employee> employees = new List<Employee>
-            {
-                timur, rashid, ilham, lukas,
-                orkadiy, volodya,
-                ilshat, ivanych, ilya, vitya, zhenya,
-                sergey, lyaysan, marat, dina, ildar, anton
-            };
-        List<WorkTask> tasks = new List<WorkTask>
-            {
-                new WorkTask("Сделать кнопку «Сделать всё хорошо» для бухгалтерии", TaskTarget.Developers),
-                new WorkTask("Настроить корпоративный VPN", TaskTarget.SystemAdmins),
-                new WorkTask("Согласовать бюджет на закупку серверов", TaskTarget.Management)
-            };
-        while (true)
+        static void Ex1Test()
         {
-            Console.WriteLine("СПИСОК СОТРУДНИКОВ:");
-            for (int i = 0; i < employees.Count; i++)
+            var customer = new Employee("Александр (Заказчик)", "Product Owner");
+            var teamLead = new Employee("Елена (Тимлид)", "Team Lead");
+
+            var team = new List<Employee>
             {
-                Console.WriteLine($"{i + 1}. {employees[i].Name} ({employees[i].Position})");
+                new Employee("Иван", "Backend Developer"),
+                new Employee("Мария", "Frontend Developer"),
+                new Employee("Дмитрий", "QA Engineer"),
+                new Employee("Анна", "UI/UX Designer"),
+                new Employee("Сергей", "DevOps"),
+                new Employee("Ольга", "System Analyst"),
+                new Employee("Павел", "Backend Developer"),
+                new Employee("Наталья", "Frontend Developer"),
+                new Employee("Артем", "Mobile Developer"),
+                new Employee("Виктория", "QA Automation")
+            };
+
+            var project = new Project("Разработка корпоративного портала", DateTime.Now.AddMonths(2), customer, teamLead);
+
+            var tasks = new List<ProjectTask>();
+            for (int i = 0; i < team.Count; i++)
+            {
+                var task = project.AddTask(
+                    teamLead,
+                    $"Модуль #{i + 1} ({team[i].Role})",
+                    DateTime.Now.AddDays(14),
+                    team[i]
+                );
+                tasks.Add(task);
             }
-            Console.WriteLine("0. Выход из программы");
 
-            int senderIndex = ReadChoice("\nВыберите номер сотрудника, КОТОРЫЙ дает задачу: ", 0, employees.Count);
-            if (senderIndex == 0) break;
+           
+            var extraTask = project.AddTask(teamLead, "Интеграция с устаревшим API", DateTime.Now.AddDays(5), team[2]);
 
-            int receiverIndex = ReadChoice("Выберите номер сотрудника, КОМУ дается задача: ", 1, employees.Count);
 
-            Console.WriteLine("\nДОСТУПНЫЕ ЗАДАЧИ");
+            project.StartExecution(teamLead);
+
+            tasks[0].Delegate(team[0], team[6]);
+
+            extraTask.Reject(team[2]);
+            project.RemoveTask(teamLead, extraTask);
+
+            tasks[1].TakeInWork(team[1]);
+            tasks[1].SubmitReport(team[1], "Сверстала главную страницу.");
+            tasks[1].ReturnForRevision(teamLead, "Не адаптировано под мобильные экраны.");
+            tasks[1].SubmitReport(team[1], "Добавила адаптивную верстку для смартфонов.");
+            tasks[1].ApproveReport(teamLead);
+
             for (int i = 0; i < tasks.Count; i++)
             {
-                Console.WriteLine($"{i + 1}. {tasks[i].Title} [Для: {tasks[i].Target}]");
+                if (i == 1)
+                {
+                    continue; 
+                }
+
+                Employee currentExecutor = tasks[i].Executor!;
+                tasks[i].TakeInWork(currentExecutor);
+                tasks[i].SubmitReport(currentExecutor, $"Работа по '{tasks[i].Description}' полностью завершена.");
+                tasks[i].ApproveReport(teamLead);
             }
 
-            int taskIndex = ReadChoice("Выберите номер задачи: ", 1, tasks.Count);
+            int completedCount = 0;
+            foreach (ProjectTask task in project.Tasks)
+            {
+                if (task.Status == TaskStatus.Completed)
+                {
+                    completedCount++;
+                }
+            }
 
-            // Выполняем назначение и проверку
-            Employee sender = employees[senderIndex - 1];
-            Employee receiver = employees[receiverIndex - 1];
-            WorkTask selectedTask = tasks[taskIndex - 1];
-
-            sender.AssignTask(selectedTask, receiver);
-
-            Console.WriteLine("Нажмите Enter, чтобы назначить следующую задачу...");
-            Console.ReadLine();
-            Console.Clear();
+            Console.WriteLine($"\nИтоговый статус проекта: {project.Status}");
+            Console.WriteLine($"Всего выполнено задач: {completedCount} из {project.Tasks.Count}");
         }
     }
 }
-
-

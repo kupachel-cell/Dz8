@@ -35,19 +35,33 @@
             }
 
 
-            public void Delegate(Employee currentEmployee, Employee newExecutor)
+        public void Delegate(Employee currentExecutor, Employee newExecutor)
+        {
+            if (currentExecutor != Executor)
             {
-                EnsureProjectInExecution();
-                if (Executor != currentEmployee)
-                    throw new InvalidOperationException("Делегировать задачу может только текущий исполнитель.");
-                if (Status != TaskStatus.Assigned && Status != TaskStatus.InProgress)
-                    throw new InvalidOperationException("Нельзя делегировать задачу на проверке или выполненную.");
-
-                Executor = newExecutor;
-                Status = TaskStatus.Assigned;
-                Console.WriteLine($"[Задача] '{Description}' делегирована: {currentEmployee.Name} -> {newExecutor.Name}. Статус: Назначена.");
+                Console.WriteLine($"[Ошибка] Делегировать задачу '{Description}' может только текущий исполнитель ({Executor?.Name}).");
+                return;
             }
-            public void Reject(Employee currentEmployee)
+
+            if (newExecutor == null)
+            {
+                Console.WriteLine("[Ошибка] Не указан новый исполнитель.");
+                return;
+            }
+
+            if (Status != TaskStatus.Assigned && Status != TaskStatus.InProgress)
+            {
+                Console.WriteLine($"[Ошибка] Нельзя делегировать задачу '{Description}' в статусе '{Status}'. Это доступно только для статусов 'Назначена' или 'В работе'.");
+                return;
+            }
+
+            TaskStatus previousStatus = Status;
+            Executor = newExecutor;
+            Status = TaskStatus.Assigned; 
+
+            Console.WriteLine($"{currentExecutor.Name} делегировал(а) задачу '{Description}' (была в статусе: {previousStatus}) сотруднику {newExecutor.Name}. Новый статус: Назначена.");
+        }
+        public void Reject(Employee currentEmployee)
             {
                 EnsureProjectInExecution();
                 if (Executor != currentEmployee)
